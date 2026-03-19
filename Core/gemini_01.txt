@@ -1,0 +1,43 @@
+Análisis del código fuente (main.c)
+Este archivo es el programa principal (generado típicamente por herramientas como STM32CubeMX o STM32CubeIDE) para un microcontrolador STM32. El objetivo principal de este código en particular es establecer una comunicación de texto bidireccional (enviar y recibir cadenas de caracteres) utilizando funciones estándar de C.
+
+Aquí están los puntos clave de su funcionamiento:
+
+Inclusión de librerías: En la sección de usuario, se incluye <stdio.h>, lo que permite el uso de funciones de entrada y salida estándar como printf y scanf.
+
+Inicialización del hardware: Llama a funciones como HAL_Init(), SystemClock_Config(), MX_GPIO_Init() y MX_USART2_UART_Init() para configurar el reloj del sistema, los pines de propósito general (incluyendo un LED LD2 y un botón B1) y el periférico de comunicación serial USART2.
+
+Preparación para Semihosting: * Se declara la función externa extern void initialise_monitor_handles(void);.
+
+Al inicio de la función main, se llama a initialise_monitor_handles(). Esta es la clave para habilitar la entrada/salida a través del depurador (debugger).
+
+Bucle principal (while(1)):
+
+Imprime "Hello World!\n" una vez antes de entrar al bucle.
+
+Dentro del bucle infinito, imprime el mensaje "Enter string:".
+
+Espera a que el usuario ingrese una cadena de texto usando scanf("%s", p); y la guarda en un arreglo de caracteres en la memoria del microcontrolador.
+
+Imprime "Received string: " seguido de la cadena que el usuario acaba de escribir utilizando printf(p).
+
+¿Qué es el Semihosting?
+Semihosting es un mecanismo utilizado en el desarrollo de sistemas embebidos (especialmente en arquitecturas ARM Cortex) que permite al microcontrolador utilizar los periféricos de entrada/salida (como la pantalla y el teclado) de la computadora host (tu PC) a través de la conexión de depuración (debugger/ST-LINK).
+
+Normalmente, un microcontrolador no tiene una pantalla ni un teclado físico conectado. Para ver mensajes de texto generados por el código, normalmente tendrías que enviar esos datos a través de un puerto serial (como UART) a un programa de terminal en tu PC. El semihosting evita esa necesidad de cableado o configuración extra durante la fase de desarrollo.
+
+Relación del Semihosting con el código fuente
+La relación directa en tu código se encuentra en estas líneas:
+
+extern void initialise_monitor_handles(void);
+
+initialise_monitor_handles();
+
+El uso de printf y scanf.
+
+¿Cómo funciona en conjunto?
+Aunque en tu código se inicializa el periférico USART2 (MX_USART2_UART_Init()), los mensajes de printf y las lecturas de scanf no están viajando por esos pines físicos del UART.
+
+Al llamar a initialise_monitor_handles(), le estás indicando a la librería estándar de C que redirija todas las peticiones de entrada y salida (como printf y scanf) a través de la interfaz de depuración. Cuando el microcontrolador ejecuta un printf, hace una pausa, le envía los datos al depurador, el depurador los muestra en la consola (por ejemplo, en la consola de STM32CubeIDE) y luego el microcontrolador continúa su ejecución. Lo mismo ocurre de forma inversa con el scanf, donde el microcontrolador se queda esperando a que escribas algo en la consola de tu PC.
+
+Nota de rendimiento: El semihosting es excelente para depurar de forma rápida, pero es un proceso computacionalmente muy lento para el microcontrolador, ya que detiene el procesador cada vez que se envía o recibe un carácter. No debe usarse en código de producción final.
